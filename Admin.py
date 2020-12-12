@@ -33,7 +33,7 @@ class Admin(commands.Cog):
         else:
             await ctx.channel.send("You didn't provide a user's id and/or a message.")
 
-    @client.command(hidden=True)
+    @client.command(pass_context=True)
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def dm_role(self, ctx, role: discord.Role, *, msg=None):
@@ -66,12 +66,12 @@ class Admin(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def edit(self, ctx, message_id, *, new_msg):
-        """> Edit a normal text sent by the bot"""
+        """> Edit a text msg sent by the bot"""
         msg = await ctx.fetch_message(message_id)
         await msg.edit(content = new_msg)
         await ctx.message.delete()
 
-    @client.command()
+    @client.command(hidden=True)
     @commands.has_permissions(administrator = True)
     @commands.guild_only()
     async def announcement(self, ctx, channel: discord.TextChannel ,* ,msg):
@@ -87,7 +87,7 @@ class Admin(commands.Cog):
         embed.set_footer(text="#NemesisAintBorn", icon_url='https://images-ext-1.discordapp.net/external/pd__2K3vSC-oG_qS3xref25-hpBehKYBsdPJc0i-tHM/https/media.discordapp.net/attachments/778268429715111957/779417104335372299/1605897884519.png')
         await channel.send(content=f"@everyone", embed=embed)
 
-    @client.command()
+    @client.command(hidden=True)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def edit_announcement(self, ctx, message_id, *, new_desc):
@@ -101,7 +101,7 @@ class Admin(commands.Cog):
         await msg.edit(content=f"@everyone", embed=embed)
         await ctx.message.delete()
 
-    @client.command()
+    @client.command(hidden=True)
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def imgembed(self, ctx, channel: discord.TextChannel, *, msg):
@@ -112,7 +112,7 @@ class Admin(commands.Cog):
         embed.set_image(url=msg)
         await channel.send(embed=embed)
 
-    @client.command()
+    @client.command(hidden=True)
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def edit_imgembed(self, ctx, message_id, *, new_url):
@@ -123,7 +123,7 @@ class Admin(commands.Cog):
         await msg.edit(embed=embed)
         await ctx.message.delete()
 
-    @client.command()
+    @client.command(hidden=True)
     @commands.has_permissions(administrator = True)
     @commands.guild_only()
     async def sayembed(self, ctx, channel: discord.TextChannel, tit ,* ,msg):
@@ -135,7 +135,7 @@ class Admin(commands.Cog):
             colour = discord.Colour.from_rgb(250, 0, 0))
         await channel.send(embed=embed)
 
-    @client.command()
+    @client.command(hidden=True)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def edit_sayembed(self, ctx, message_id, new_tit, *, new_msg):
@@ -166,7 +166,7 @@ class Admin(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def edit_embed(self, ctx, message_id, *, new_msg):
         """> Edit embed"""
-        log_channel = self.bot.get_channel(783793077918629939)
+        log_channel = self.bot.get_channel(720169568965754932)
         msg = await ctx.fetch_message(message_id)
         embed = discord.Embed(
             description=new_msg,

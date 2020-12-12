@@ -460,6 +460,23 @@ class Moderation(commands.Cog):
         await self.do_removal(ctx, search, predicate)
 
     @purge.command()
+    @commands.has_guild_permissions(manage_messages=True)
+    @commands.guild_only()
+    async def removereactions(self, ctx, id: int):
+        """> Clear reactions from a message"""
+        try:
+            message = await ctx.channel.fetch_message(id)
+        except discord.errors.NotFound:
+            await ctx.send(f":xmark:784187150542569503> | I can't find message with `{id}` id in this channel")
+            return
+        try:
+            await message.clear_reactions()
+            await ctx.send(f"<:check:784187150660665384> Successfully removed all the reactions from message with `{id}` id")
+        except discord.errors.Forbidden:
+            await ctx.send(f"⚠ I guess I'm lacking the permission to manage roles.")
+
+
+    @purge.command()
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     @commands.guild_only()
@@ -889,39 +906,6 @@ class Moderation(commands.Cog):
         """> Gets the id for the specified role"""
         await ctx.send(f"Roll name: {role.mention} | Role id: `{role.id}`")
 
-    @commands.has_guild_permissions(manage_messages=True)
-    @commands.guild_only()
-    @client.command()
-    async def pin(self, ctx, id: int):
-        """> Pins the message with the specified ID to the channel"""
-        try:
-            message = await ctx.channel.fetch_message(id)
-            await ctx.message.delete()
-        except discord.errors.NotFound:
-            await ctx.sens(f":xmark:784187150542569503> | I can't find a message with `{id}` id")
-            return
-        try:
-            await message.pin()
-        except discord.errors.Forbidden:
-            await ctx.send("⚠ I guess I'm lacking the permission to manage roles.", ctx)
-
-    @commands.has_guild_permissions(manage_messages=True)
-    @commands.guild_only()
-    @client.command()
-    async def unpin(self, ctx, id: int):
-        """> Unpins the message with the specified ID from the channel"""
-        pinned_messages = await ctx.channel.pins()
-        message = discord.utils.get(pinned_messages, id=id)
-        await ctx.message.delete()
-        if message is None:
-            await ctx.send(f":xmark:784187150542569503> | I can't find a pinned message with `{id}` id", ctx).format(id)
-            return
-        try:
-            await message.unpin()
-            await ctx.send(f"<:check:784187150660665384> Successfully unpinned message with `{id}` id", ctx)
-        except discord.errors.Forbidden:
-            await ctx.send("⚠ I guess I'm lacking the permission to manage roles.", ctx)
-
     @commands.has_guild_permissions(manage_roles=True)
     @commands.guild_only()
     @client.command()
@@ -953,22 +937,6 @@ class Moderation(commands.Cog):
                 await ctx.send(f"⚠ `{name}` role is higher than me and I cannot access it.")
             else:
                 await ctx.send("⚠ I guess I'm lacking the permission to manage roles.")
-
-    @commands.has_guild_permissions(manage_messages=True)
-    @commands.guild_only()
-    @client.command()
-    async def removereactions(self, ctx, id: int):
-        """> Clear reactions from a message"""
-        try:
-            message = await ctx.channel.fetch_message(id)
-        except discord.errors.NotFound:
-            await ctx.send(f":xmark:784187150542569503> | I can't find message with `{id}` id in this channel")
-            return
-        try:
-            await message.clear_reactions()
-            await ctx.send(f"<:check:784187150660665384> Successfully removed all the reactions from message with `{id}` id")
-        except discord.errors.Forbidden:
-            await ctx.send(f"⚠ I guess I'm lacking the permission to manage roles.")
 
     @commands.has_guild_permissions(manage_roles=True)
     @commands.guild_only()
@@ -1077,62 +1045,6 @@ class Moderation(commands.Cog):
         except Exception as e:
             print(e)
             return await ctx.send(f"⚠ Something failed! Error: (Please report it to my developers):\n- {e}")
-
-    @client.command()
-    @commands.guild_only()
-    @commands.has_permissions(manage_nicknames=True)
-    @commands.bot_has_permissions(manage_nicknames=True)
-    async def dehoist(self, ctx, *, nick: str):
-        """> Dehoist members with non alphabetic names """
-        nickname_only = False
-        try:
-            hoisters = []
-            changed = 0
-            failed = 0
-            error = ""
-            await ctx.send(f'<a:loading1:784376190349344768> Started dehoisting process...')
-            for hoister in ctx.guild.members:
-                if nickname_only:
-                    if not hoister.nick: return
-                    name = hoister.nick
-                else:
-                    name = hoister.display_name
-                if not name[0].isalnum():
-                    try:
-                        await hoister.edit(nick=nick, reason=responsible(ctx.author, 'member was dehoisted.'))
-                        changed += 1
-                        hoisters.append(f"{hoister.mention} ({hoister.id}) - {hoister} ")
-                    except Exception as e:
-                        failed += 1
-                        error += f"• {hoister.mention} ({hoister.id}) - {e}\n"
-                        pass
-            if not hoisters and failed == 0:
-                return await ctx.send(f"<a:loading1:784376190349344768> | No hoisters were found.")
-
-            if changed == 0 and failed != 0:
-                msg = f"\n\n**I failed to dehoist {failed} member(s):**\n{error}"
-                return await ctx.send(msg[:1980])
-
-            if len(hoisters) > 20:
-                hoisters = hoisters[:20]
-            msg = f"**Following member(s) were dehoisted: `(Total: {changed})`**"
-            for num, hoist in enumerate(hoisters, start=0):
-                msg += f"\n`[{num + 1}]` {escape_markdown(hoist, as_needed=True)}"
-
-            if changed > 20:
-                msg += "\nSorry, that caps out at 20."
-
-            if failed != 0:
-                msg += f"\n\n**However I failed to dehoist {failed} member(s):**\n{escape_markdown(error, as_needed=True)}"
-
-            if len(msg) >= 1980:
-                msg = msg[:1980]
-                msg += "... Limit :("
-            await ctx.send(msg)
-
-        except Exception as e:
-            print(default.traceback_maker(e))
-            await ctx.send(f"Error! ```py\n{e}```")
 
     @client.command()
     @commands.guild_only()
@@ -1245,7 +1157,7 @@ class Moderation(commands.Cog):
     @commands.group(invoke_without_command=True)
     @commands.has_guild_permissions(manage_channels=True)
     async def new(self, ctx):
-        """Category or Channel"""
+        """> Create a new Category or Channel"""
         await ctx.send("Invalid sub-command passed.")
 
     @new.command(
@@ -1278,7 +1190,7 @@ usage="<role> <Category name>",
         channel = await ctx.guild.create_text_channel(
             name=name,
             overwrites=overwrites,
-            category=self.bot.get_channel(707945693582590005),
+            category=self.bot.get_channel(720169568965754932),
         )
         await ctx.send(f"Hey dude, I made {channel.name} for ya!")
 
@@ -1309,7 +1221,7 @@ usage="<role> <Category name>",
 
     @commands.command()
     @commands.has_guild_permissions(manage_messages=True)
-    async def Mute(self, ctx, member: discord.Member = None, *, reason='Not Given'):
+    async def mute(self, ctx, member: discord.Member = None, *, reason='Not Given'):
         """> Mute a member"""
         if member == None:
             await ctx.send('Please provide a member.')
@@ -1338,7 +1250,7 @@ usage="<role> <Category name>",
 
     @commands.command()
     @commands.has_guild_permissions(manage_messages=True)
-    async def Unmute(self, ctx, member: discord.Member = None):
+    async def unmute(self, ctx, member: discord.Member = None):
         """> Unmute a muted user"""
         if member == None:
             await ctx.send('Please give a member.')
@@ -1349,6 +1261,64 @@ usage="<role> <Category name>",
             await ctx.send('Sucessfully unmuted {}.'.format(member))
         except Exception:
             await ctx.send('That user isnt muted!')
+
+    @commands.group()
+    @commands.guild_only()
+    @commands.has_permissions(ban_members=True)
+    async def find(self, ctx):
+        """> Finds a user within your search term """
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(str(ctx.command))
+
+    @find.command(name="playing")
+    async def find_playing(self, ctx, *, search: str):
+        """> Finds a user with playing status"""
+        loop = []
+        for i in ctx.guild.members:
+            if i.activities and (not i.bot):
+                for g in i.activities:
+                    if g.name and (search.lower() in g.name.lower()):
+                        loop.append(f"{i} | {type(g).__name__}: {g.name} ({i.id})")
+
+        await default.prettyResults(
+            ctx, "playing", f"Found **{len(loop)}** on your search for **{search}**", loop
+        )
+
+    @find.command(name="username", aliases=["name"])
+    async def find_name(self, ctx, *, search: str):
+        """> Finds a user with the given name"""
+        loop = [f"{i} ({i.id})" for i in ctx.guild.members if search.lower() in i.name.lower() and not i.bot]
+        await default.prettyResults(
+            ctx, "name", f"Found **{len(loop)}** on your search for **{search}**", loop
+        )
+
+    @find.command(name="nickname", aliases=["nick"])
+    async def find_nickname(self, ctx, *, search: str):
+        """> Finds a user with the given nickname"""
+        loop = [f"{i.nick} | {i} ({i.id})" for i in ctx.guild.members if i.nick if
+                (search.lower() in i.nick.lower()) and not i.bot]
+        await default.prettyResults(
+            ctx, "name", f"Found **{len(loop)}** on your search for **{search}**", loop
+        )
+
+    @find.command(name="id")
+    async def find_id(self, ctx, *, search: int):
+        """> Finds a user with the given id"""
+        loop = [f"{i} | {i} ({i.id})" for i in ctx.guild.members if (str(search) in str(i.id)) and not i.bot]
+        await default.prettyResults(
+            ctx, "name", f"Found **{len(loop)}** on your search for **{search}**", loop
+        )
+
+    @find.command(name="discriminator", aliases=["discrim"])
+    async def find_discriminator(self, ctx, *, search: str):
+        """> Finds a user with the given discriminator"""
+        if not len(search) == 4 or not re.compile("^[0-9]*$").search(search):
+            return await ctx.send("You must provide exactly 4 digits")
+
+        loop = [f"{i} ({i.id})" for i in ctx.guild.members if search == i.discriminator]
+        await default.prettyResults(
+            ctx, "discriminator", f"Found **{len(loop)}** on your search for **{search}**", loop
+        )
 
 def setup(bot):
     bot.add_cog(Moderation(bot))

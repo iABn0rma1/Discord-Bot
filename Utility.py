@@ -2,6 +2,8 @@ import discord
 import datetime
 import asyncio
 import default
+import psutil
+import sys
 from publicflags import UserFlags
 from paginator import Pages
 from discord.utils import escape_markdown
@@ -17,9 +19,19 @@ client = commands.Bot(command_prefix = commands.when_mentioned_or('?'), intents=
 
 client._uptime = None
 
-class Information(commands.Cog):
+class Utility(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    def _get_ram_usage(self):
+        memory = psutil.virtual_memory()
+        total_memory = round(memory.total / 1000000000, 2)
+        available_memory = round(memory.available / 1000000000, 2)
+        memory_used = round(total_memory - available_memory, 2)
+        memory_percent = round(total_memory / available_memory, 2)
+
+        return "{0}% - {1}GB / {2}GB used ({3}GB available)".format(memory_percent, memory_used, total_memory,
+                                                                    available_memory)
 
     @client.command(aliases=["botinfo"])
     @commands.cooldown(1, 5, commands.BucketType.member)
@@ -29,8 +41,6 @@ class Information(commands.Cog):
         version = '01.10'
 
         channel_types = Counter(type(c) for c in self.bot.get_all_channels())
-        voice = channel_types[discord.channel.VoiceChannel]
-        text = channel_types[discord.channel.TextChannel]
 
         te = len([c for c in set(self.bot.walk_commands()) if c.cog_name == "Owner"])
         se = len([c for c in set(self.bot.walk_commands()) if c.cog_name == "Staff"])
@@ -38,25 +48,63 @@ class Information(commands.Cog):
         ts = se + te
         totcmd = xd - ts
 
-        mems = len(self.bot.users)
-
         AB01 = self.bot.get_user(684644222615158834)
+        Tasky = self.bot.get_user(395852492383977472)
+        Kunta = self.bot.get_user(747176373142945822)
+
+        platform = sys.platform
+        ver = sys.version
+        api = sys.api_version
+        disc = discord.__version__
+
+        CPU_Usage = str(psutil.cpu_percent(None, False)) + "%"
+        RAM_Usage = self._get_ram_usage()
 
         embed = discord.Embed(colour = discord.Colour.from_rgb(250, 0, 0))
+        embed.set_author(name="刀ARK么れEMESIS#3232",
+                         icon_url=f"https://images-ext-1.discordapp.net/external/QSCWqyN--Xd8qkW0GwIrRk2UopjvQ87CNOw_foaJ6Tk/%3Fsize%3D1024/https/cdn.discordapp.com/avatars/785775388286517249/96abf0b9ae176acb29a301180095fd30.png")
         embed.description = f"""
-    __**General Information:**__
-    **Developer:** [{escape_markdown(str(AB01), as_needed=True)}](https://www.instagram.com/__i.ab01__/?hl=en)\
-    \n**Bot version:** {version}\n**Created on:** {default.date(self.bot.user.created_at)}\
-     ({default.timeago(datetime.datetime.now() - self.bot.user.created_at)})
-    
-    __**Other Information:**__
-    **Total:**\nCommands: **{totcmd:,}**\nMembers: **{mems:,}**\
-    \nChannels: <:TextChannel:783009153076559903> **{text:,}** | <:VoiceChannel:783009153215496242> **{voice:,}**\n
-    """
+    __**About:**__\
+    \n**Developer:** {escape_markdown(str(AB01), as_needed=True)}\n**Testers:** {Tasky}, {Kunta}
+    \n**Bot version:** {version}\n**Platform:** {platform}\n**Commands:** {totcmd}\
+    \n**Prefix:** My prefix is `%`\n**Created on:** {default.date(self.bot.user.created_at)}\
+    ({default.timeago(datetime.datetime.now() - self.bot.user.created_at)})"""
+
+        embed.add_field(name="Python Version", value=ver)
+        embed.add_field(name="‎", value="‎", inline=True)
+        embed.add_field(name="C API Version", value=api, inline=True)
+
+        embed.add_field(name="Total CPU Usage", value=CPU_Usage)
+        embed.add_field(name="‎", value="‎", inline=True)
+        embed.add_field(name="Total RAM Usage", value=RAM_Usage, inline=True)
+
         embed.set_thumbnail(url=f"{AB01.avatar_url}")
-        embed.set_footer(text= f'Made with Discord.py {discord.__version__}',
+        embed.set_footer(text= f'Made with Discord.py {disc}',
                          icon_url='https://images-ext-1.discordapp.net/external/h2NyqrWmotzW-h7JoyZqQ7dEGoXIQeZ4eqlHimj1pLk/https/i.imgur.com/6pg6Xv4.png')
+
+        try:
+            embed.set_image(url=ctx.guild.banner_url_as(format='png'))
+        except:
+            pass
+
         await ctx.send(embed=embed)
+
+    @commands.command(aliases=['pfp', 'av'])
+    @commands.cooldown(1, 5, commands.BucketType.member)
+    @commands.guild_only()
+    async def avatar(self, ctx, user: discord.User = None):
+        """> Displays what avatar user is using"""
+        user = user or ctx.author
+        if user is self.bot.user:
+            embed = discord.Embed(colour=discord.Colour.from_rgb(250, 0, 0),
+                                  title=f'{self.bot.user.name}\'s Profile Picture!')
+            embed.set_image(url=self.bot.user.avatar_url_as(static_format='png'))
+            await ctx.send(embed=embed)
+        else:
+            embed = discord.Embed(colour=discord.Colour.from_rgb(250, 0, 0),
+                                  title=f'{user}\'s Profile Picture!')
+            embed.set_image(url = user.avatar_url_as(static_format='png'))
+            await ctx.send(embed=embed)
 
     @client.command(aliases=["si", 'server'])
     @commands.guild_only()
@@ -213,34 +261,6 @@ class Information(commands.Cog):
 
             await ctx.send(embed=emb)
 
-    @commands.command(name="Tinfo", hidden=True)
-    @commands.guild_only()
-    async def tinfo(self, ctx):
-        """> Overview about the information of an ticket"""
-        embed = discord.Embed(title="Info",
-                              description=f"I heard you needed some info! React with <:RS_bin:781641561867812905> to remove this embed.",
-                              color=discord.Colour.from_rgb(250,0,0))
-        embed.add_field(name=f"Data stored:", value="None!", inline=False)
-        embed.add_field(name=f"Fact:", value="All embeds I send are removeable via a reaction!", inline=False)
-        embed.add_field(name=f"Required permissions:",
-                        value="Send messages, Manage channels, Read messages, Add reactions\nIf I am missing one of these permissions, I will throw a 503 error",
-                        inline=False)
-        embed.add_field(name=f"Other causes of 503 error:",
-                        value="503 is quite a common error, if you wish to report one, head over to my support server!",
-                        inline=False)
-        message1 = await ctx.send(embed=embed)
-        await message1.add_reaction('<:RS_bin:781641561867812905')
-
-        def check1(reaction, user):
-            return user == ctx.message.author and str(reaction.emoji) == "<:RS_bin:781641561867812905>"
-
-        try:
-            reaction, user = await self.bot.wait_for('reaction_add', timeout=120.0, check=check1)
-        except asyncio.TimeoutError:
-            return
-        else:
-            await message1.delete()
-
     @commands.command(aliases=['guildstaff'])
     @commands.cooldown(1, 5, commands.BucketType.member)
     @commands.guild_only()
@@ -276,33 +296,6 @@ class Information(commands.Cog):
 
         await ctx.send(embed=e)
 
-    @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.member)
-    @commands.guild_only()
-    async def roles(self, ctx):
-        """> List of all the roles in the server """
-        allroles = []
-
-        for num, role in enumerate(sorted(ctx.guild.roles, reverse=True), start=1):
-            if role.is_default():
-                continue
-            allroles.append(
-                f"`[{str(num).zfill(2)}]` {role.mention} | {role.id} | **[ Users : {len(role.members)} ]**\n")
-
-        if len(allroles) == 0:
-            return await ctx.send(f"<:xmark:784187150542569503> Server has no roles")
-
-        # data = BytesIO(allroles.encode('utf-8'))
-        paginator = Pages(ctx,
-                          title=f"{ctx.guild.name} roles list",
-                          entries=allroles,
-                          thumbnail=None,
-                          per_page=15,
-                          embed_color=discord.Colour.from_rgb(250,0,0),
-                          show_entry_count=True,
-                          author=ctx.author)
-        await paginator.paginate()
-
     @commands.command(aliases=['se', 'emotes'])
     @commands.cooldown(1, 5, commands.BucketType.member)
     @commands.guild_only()
@@ -326,35 +319,5 @@ class Information(commands.Cog):
                           author=ctx.author)
         await paginator.paginate()
 
-    @commands.command(aliases=['perms'])
-    @commands.cooldown(1, 5, commands.BucketType.member)
-    @commands.guild_only()
-    async def permissions(self, ctx, member: discord.Member = None):
-        """> See what permissions member has in the server"""
-
-        member = member or ctx.author
-
-        sperms = dict(member.guild_permissions)
-
-        perm = []
-        for p in sperms.keys():
-            if sperms[p] == True and member.guild_permissions.administrator == False:
-                perm.append(f"<:check:784187150660665384> {p}\n")
-            if sperms[p] == False and member.guild_permissions.administrator == False:
-                perm.append(f"<:xmark:784187150542569503> {p}\n")
-
-        if member.guild_permissions.administrator == True:
-            perm = [f'<:check:784187150660665384> Administrator']
-
-        paginator = Pages(ctx,
-                          title=f"{member.name} guild permissions",
-                          entries=perm,
-                          thumbnail=None,
-                          per_page=20,
-                          embed_color=discord.Colour.from_rgb(250, 0, 0),
-                          show_entry_count=False,
-                          author=ctx.author)
-        await paginator.paginate()
-
 def setup(bot):
-    bot.add_cog(Information(bot))
+    bot.add_cog(Utility(bot))

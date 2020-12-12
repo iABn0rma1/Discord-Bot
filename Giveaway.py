@@ -30,7 +30,7 @@ class Giveaway(commands.Cog, name="Giveaway Category"):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(aliases=["rollagain", "rr"])
+    @commands.command(aliases=["rollagain", "rr"], hidden=True)
     @commands.has_any_role('Moderator', 'Mod', 'Admin', 'Owner')
     async def reroll(self, ctx, message: discord.Message):
         """> re-rolls the specified giveaway in the current channel"""
@@ -56,8 +56,7 @@ class Giveaway(commands.Cog, name="Giveaway Category"):
         await message.edit(embed=embed)
 
     @commands.command(
-        brief="> Interactively Sets Up the Giveaway",
-        usage="startgiveaway",
+        brief="> Interactively Sets Up the Giveaway", hidden=True,
         aliases=["ga", "giveaway", 'giveawaystart', 'startgv', 'gvstart'])
     @commands.guild_only()
     @commands.is_owner()

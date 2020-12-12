@@ -82,12 +82,12 @@ class owner(commands.Cog, name="owner"):
     @commands.is_owner()
     async def getguild(self, ctx):
         """> Returning error: list has no attribute channel"""
-        lst_guild = list(client.guilds)
+        lst_guild = list(self.bot.guilds)
         lst_chnnl = self.bot.guilds.TextChannel[0]
         id = ctx.message.guild.id
         await ctx.send(lst_guild, lst_chnnl)
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def announce(self, ctx, *, message: str):
         """> Announce something in support server announcement channel
@@ -120,6 +120,35 @@ class owner(commands.Cog, name="owner"):
                               description=f"<:DarkNemesis:770563343974400010> You can invite me by clicking \
                               [here](https://discord.com/api/oauth2/authorize?client_id=785775388286517249&permissions=8&scope=bot)")
         await ctx.send(embed=embed)
+
+    @commands.group(hidden=True)
+    @commands.is_owner()
+    async def change(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(str(ctx.command))
+
+    @change.command(name="username", hidden=True)
+    @commands.is_owner()
+    async def change_username(self, ctx, *, name: str):
+        """> Change username. """
+        try:
+            await self.bot.user.edit(username=name)
+            await ctx.send(f"Successfully changed username to **{name}**")
+        except discord.HTTPException as err:
+            await ctx.send(err)
+
+    @change.command(name="nickname", hidden=True)
+    @commands.is_owner()
+    async def change_nickname(self, ctx, *, name: str = None):
+        """> Change nickname. """
+        try:
+            await ctx.guild.me.edit(nick=name)
+            if name:
+                await ctx.send(f"Successfully changed nickname to **{name}**")
+            else:
+                await ctx.send("Successfully removed nickname")
+        except Exception as err:
+            await ctx.send(err)
 
 def setup(bot):
     bot.add_cog(owner(bot))

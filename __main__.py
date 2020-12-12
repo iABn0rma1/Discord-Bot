@@ -28,6 +28,7 @@ extensions = [
     "Miscellaneous",
     "Moderation",
     "Owner",
+    "tickets",
     "Utility"
 ]
 
